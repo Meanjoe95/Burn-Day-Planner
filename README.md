@@ -4,7 +4,7 @@ A single-file, self-hosted tool for prescribed fire planning: live NWS fire weat
 an FFS-guideline go/no-go call, and an FDACS-style smoke screening map — all in one
 page, updated in real time, no installation required, no dependencies to build.
 
-Built for Florida Forest Service prescribed burn planning. Not an official FDACS or
+Built for prescribed burn planning. Not an official FDACS or
 NWS product — see **Limitations & assumptions** below before relying on it operationally.
 
 ---
