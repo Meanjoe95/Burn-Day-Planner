@@ -33,21 +33,6 @@ NWS product — see **Limitations & assumptions** below before relying on it ope
 
 ---
 
-## Hosting it (GitHub Pages)
-
-This is one self-contained HTML file — no build step, no server, no dependencies to
-install. To make it usable from a phone or any browser:
-
-1. Create a GitHub repo, upload this file, **rename it to `index.html`**.
-2. Repo **Settings → Pages** → Source: *Deploy from a branch* → branch `main`, folder
-   `/ (root)` → Save.
-3. Wait ~1 minute, then open the URL GitHub gives you.
-4. On iOS: open that URL in Safari → Share → **Add to Home Screen** for an app-like icon.
-
-To update later: re-upload the new file as `index.html` the same way (Add file →
-Upload files → Commit). The live site rebuilds automatically within a minute or two.
-
----
 
 ## Using it
 
