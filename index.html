@@ -118,22 +118,25 @@
   footer.foot{border-top:1px solid var(--line);padding-top:10px;margin-top:6px;
     font-family:var(--mono);font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
 
-  .tablewrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:3px;}
-  table.hourly{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:auto;}
+  .tablewrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:3px;-webkit-overflow-scrolling:touch;}
+  table.hourly{width:100%;min-width:740px;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:auto;}
   table.hourly thead th{position:sticky;top:0;background:var(--panel-2);text-align:right;
     font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;
-    padding:7px 6px;border-bottom:1px solid var(--line);white-space:normal;word-break:break-word;}
-  table.hourly thead th:first-child{text-align:left;}
-  table.hourly td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--text);white-space:normal;word-break:break-word;}
-  table.hourly td:first-child{text-align:left;color:var(--muted);}
+    padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.hourly thead th:first-child{text-align:left;position:sticky;left:0;z-index:2;}
+  table.hourly td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--text);white-space:nowrap;}
+  table.hourly td:first-child{text-align:left;color:var(--muted);position:sticky;left:0;background:var(--panel);z-index:1;}
   table.hourly tbody tr:last-child td{border-bottom:none;}
   table.hourly tbody tr:hover td{background:var(--panel-2);}
+  table.hourly tbody tr:hover td:first-child{background:var(--panel-2);}
   table.hourly td.na{color:var(--muted);}
+  .tablescrollhint{display:none;font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center;}
+  @media(max-width:760px){.tablescrollhint{display:block;}}
 
   .panelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
   .panelhead h3{margin:0;}
-  .btn-print{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;
-    background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:5px 10px;
+  .btn-print{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:7px 12px;
     border-radius:3px;cursor:pointer;}
   .btn-print:hover{border-color:var(--muted);}
 
@@ -147,10 +150,12 @@
     border:1px solid var(--line);padding:8px 14px;border-radius:3px;display:inline-block;}
   .spotlink a:hover{border-color:var(--muted);background:var(--panel-2);}
 
+  @page{ size: landscape; margin: 10mm; }
   @media print{
     body{background:#fff;color:#000;}
     .livetag, header.top, #warnBox, .banner, .inputs, .tiles, footer.foot, .spotlink,
-    .btn-print, .dayhint, .maphint, .leaflet-control-container, .fuelnote, .mapinputs, .conditions, .printhint{display:none!important;}
+    .btn-print, .dayhint, .maphint, .leaflet-control-container, .fuelnote, .mapinputs, .conditions, .printhint,
+    .tablescrollhint{display:none!important;}
 
     body.printing-map .dayScanPanel{display:none!important;}
     body.printing-map .tablePanel{display:none!important;}
@@ -161,10 +166,10 @@
     body.printing-table .print-only{display:block!important;max-height:none!important;overflow:visible!important;}
 
     .print-info{display:block!important;color:#000!important;border-bottom-color:#999!important;}
-    #map{height:520px!important;border:1px solid #999;}
+    #map{height:440px!important;border:1px solid #999;}
     .panel{border:none!important;padding:0!important;background:#fff!important;max-width:none!important;margin:0!important;}
     table.hourly{min-width:0!important;width:100%!important;table-layout:auto!important;font-size:8.5px!important;}
-    table.hourly td,table.hourly th{color:#000!important;border-color:#ccc!important;padding:3px 4px!important;white-space:normal!important;}
+    table.hourly td,table.hourly th{color:#000!important;border-color:#ccc!important;padding:3px 4px!important;white-space:normal!important;position:static!important;background:none!important;}
     table.hourly thead th{background:#eee!important;position:static!important;}
   }
 </style>
@@ -252,6 +257,7 @@
     <div class="tablewrap">
       <table class="hourly" id="hourlyTable"><thead></thead><tbody></tbody></table>
     </div>
+    <div class="tablescrollhint">Swipe to see all columns →</div>
     <div class="print-only" id="printWeekTable"></div>
   </div>
 
