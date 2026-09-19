@@ -344,6 +344,12 @@ function parseISODuration(iso){
   const days=parseInt(m[1]||0), hours=parseInt(m[2]||0), mins=parseInt(m[3]||0);
   return days*24*60+hours*60+mins;
 }
+function localDateHour(date, tz){
+  const parts = new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hour12:false}).formatToParts(date);
+  const get = k => parts.find(p=>p.type===k).value;
+  let hour = get('hour'); if(hour==='24') hour='00';
+  return {dateKey:`${get('year')}-${get('month')}-${get('day')}`, hour:parseInt(hour)};
+}
 function expandLayer(layer, tz){
   if(!layer || !layer.values) return [];
   const out=[];
@@ -355,10 +361,8 @@ function expandLayer(layer, tz){
     const steps = Math.max(1, Math.round(minutes/60));
     for(let i=0;i<steps;i++){
       const t = new Date(start.getTime()+i*3600*1000);
-      const parts = new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hour12:false}).formatToParts(t);
-      const get = k => parts.find(p=>p.type===k).value;
-      let hour = get('hour'); if(hour==='24') hour='00';
-      out.push({dateKey:`${get('year')}-${get('month')}-${get('day')}`, hour:parseInt(hour), value:entry.value});
+      const {dateKey, hour} = localDateHour(t, tz);
+      out.push({dateKey, hour, value:entry.value});
     }
   }
   return out;
@@ -399,14 +403,14 @@ function toHourMapAccumStart(layer, tz, convert){
   for(const entry of layer.values){
     if(entry.value===null||entry.value===undefined) continue;
     const start = new Date(entry.validTime.split('/')[0]);
-    const parts = new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hour12:false}).formatToParts(start);
-    const get = k => parts.find(p=>p.type===k).value;
-    let hour = get('hour'); if(hour==='24') hour='00';
-    const dateKey = `${get('year')}-${get('month')}-${get('day')}`;
+    const {dateKey, hour} = localDateHour(start, tz);
     if(!m[dateKey]) m[dateKey]={};
-    m[dateKey][parseInt(hour)] = convert ? convert(entry.value) : entry.value;
+    m[dateKey][hour] = convert ? convert(entry.value) : entry.value;
   }
   return m;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function fmtHour(h){
   const period = h<12?'AM':'PM';
@@ -441,24 +445,6 @@ function parseWeatherEntry(valueArr){
   const thunderEntry = active.find(v=>v.weather==='thunderstorms');
   return {text:label, hasThunder:!!thunderEntry, thunderCoverage: thunderEntry?prettyCoverage(thunderEntry.coverage):null};
 }
-function expandComplexLayer(layer, tz){
-  if(!layer || !layer.values) return [];
-  const out=[];
-  for(const entry of layer.values){
-    if(entry.value==null) continue;
-    const [startStr, durStr] = entry.validTime.split('/');
-    const start = new Date(startStr);
-    const steps = Math.max(1, Math.round(parseISODuration(durStr)/60));
-    for(let i=0;i<steps;i++){
-      const t = new Date(start.getTime()+i*3600*1000);
-      const parts = new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hour12:false}).formatToParts(t);
-      const get = k => parts.find(p=>p.type===k).value;
-      let hour = get('hour'); if(hour==='24') hour='00';
-      out.push({dateKey:`${get('year')}-${get('month')}-${get('day')}`, hour:parseInt(hour), value:entry.value});
-    }
-  }
-  return out;
-}
 function daySummaryFromWeather(expandedWeather){
   const byDay={};
   for(const e of expandedWeather){
@@ -489,9 +475,7 @@ function sumAccumByDay(layer, tz){
   for(const entry of layer.values){
     if(entry.value===null||entry.value===undefined) continue;
     const start = new Date(entry.validTime.split('/')[0]);
-    const parts = new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(start);
-    const get = k => parts.find(p=>p.type===k).value;
-    const dateKey = `${get('year')}-${get('month')}-${get('day')}`;
+    const {dateKey} = localDateHour(start, tz);
     byDay[dateKey] = (byDay[dateKey]||0) + entry.value;
   }
   return byDay;
@@ -584,7 +568,7 @@ async function fetchWeather(lat, lng){
   const visMin = visL ? aggregateByDay(expandLayer(visL, tz), 'min') : {};
   const wind20Max = wind20SpdL ? aggregateByDay(expandLayer(wind20SpdL, tz), 'max') : {};
   const wind20DirSample = wind20DirL ? sampleByDay(expandLayer(wind20DirL, tz)) : {};
-  const weatherDaySummary = weatherL ? daySummaryFromWeather(expandComplexLayer(weatherL, tz)) : {};
+  const weatherDaySummary = weatherL ? daySummaryFromWeather(expandLayer(weatherL, tz)) : {};
 
   const days = Object.keys(tempMax).sort().slice(0,7);
   if(days.length===0) throw new Error('No forecast data returned for the daytime window at this point.');
@@ -632,7 +616,7 @@ async function fetchWeather(lat, lng){
     wind20Dir: wind20DirL ? toHourMap(expandLayer(wind20DirL, tz)) : {},
     wx: weatherL ? (()=>{
       const m={};
-      for(const e of expandComplexLayer(weatherL, tz)){
+      for(const e of expandLayer(weatherL, tz)){
         if(!m[e.dateKey]) m[e.dateKey]={};
         if(m[e.dateKey][e.hour]===undefined) m[e.dateKey][e.hour]=parseWeatherEntry(e.value).text;
       }
@@ -676,7 +660,7 @@ function renderTiles(day, statuses){
   const windPrimaryDir = day.wind20 != null ? day.wind20Dir : day.windDir;
   const windDirTxt = windPrimaryDir!=null ? ' '+bearingToCompass(windPrimaryDir) : '';
   const defs = [
-    {k:'wind', l:'Wind (20ft)', v:windPrimary, u:'mph'+windDirTxt, max:25, st:statuses.wind},
+    {k:'wind', l:day.wind20!=null?'Wind (20ft)':'Wind (surface)', v:windPrimary, u:'mph'+windDirTxt, max:25, st:statuses.wind},
     {k:'tw', l:'Transport wind', v:day.tw, u:'mph'+twDirTxt, max:15, st:statuses.tw},
     {k:'mh', l:'Mixing height', v:day.mh, u:'ft', max:3000, st:statuses.mh},
     {k:'di', l:'Dispersion index', v:day.di, u:'', max:50, st:statuses.di},
@@ -771,8 +755,8 @@ function updateCone(day){
 function renderConditionsLine(day){
   const el = document.getElementById('conditionsLine');
   const parts = [];
-  parts.push('<span>Precip: <b>'+(day.precipType||'—')+'</b></span>');
-  if(day.thunderChance) parts.push('<span>Thunder: <b>'+day.thunderChance+'</b></span>');
+  parts.push('<span>Precip: <b>'+escapeHtml(day.precipType||'—')+'</b></span>');
+  if(day.thunderChance) parts.push('<span>Thunder: <b>'+escapeHtml(day.thunderChance)+'</b></span>');
   if(day.precipDurationHrs>0){
     parts.push('<span>Precip window: <b>'+fmtHour(day.precipBeginHour)+'\u2013'+fmtHour(day.precipEndHour)+'</b> ('+day.precipDurationHrs+'hr)</span>');
   }
@@ -800,7 +784,7 @@ function fmtCell(v, decimals, dirMap, hour){
   return '<td>'+num+dir+'</td>';
 }
 function fmtTextCell(v){
-  return '<td>'+(v==null||v===''?'<span class="na">\u2014</span>':v)+'</td>';
+  return '<td>'+(v==null||v===''?'<span class="na">\u2014</span>':escapeHtml(v))+'</td>';
 }
 
 const HOURLY_HEADERS = '<th>Hour</th><th>Temp</th><th>RH</th><th>Dispersion</th><th>Sky cover</th><th>Precip type</th><th>Chance precip</th>'+
@@ -859,7 +843,7 @@ async function loadLocation(){
     renderAll();
   }catch(err){
     setLive('err','Fetch failed');
-    document.getElementById('warnBox').innerHTML = '<div class="warn err">'+err.message+'</div>';
+    document.getElementById('warnBox').innerHTML = '<div class="warn err">'+escapeHtml(err.message)+'</div>';
     document.getElementById('bannerStatus').textContent = 'No data';
     document.getElementById('bannerStatus').style.color = 'var(--muted)';
     document.getElementById('bannerSub').textContent = 'Could not load a forecast for this point.';
