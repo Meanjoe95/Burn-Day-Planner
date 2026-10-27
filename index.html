@@ -16,6 +16,7 @@
     --caution:#C99A3E; --caution-dim:#332B1C;
     --nogo:#C15B4E; --nogo-dim:#331F1C;
     --info:#5B8AA6;
+    --heat-warm:#C15B4E; --heat-cool:#4F9A6B; --heat-wind:#8B7FC7; --heat-sky:#5B8AA6; --heat-neutral:#8C9686;
     --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   }
   *{box-sizing:border-box;}
@@ -133,6 +134,18 @@
   .tablescrollhint{display:none;font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center;}
   @media(max-width:760px){.tablescrollhint{display:block;}}
 
+  .weeklywrap{max-height:480px;overflow:auto;border:1px solid var(--line);border-radius:3px;-webkit-overflow-scrolling:touch;}
+  table.weekly{width:100%;min-width:620px;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:auto;}
+  table.weekly thead th{position:sticky;top:0;background:var(--panel-2);text-align:center;
+    font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;
+    padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.weekly thead th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:var(--panel-2);}
+  table.weekly td{text-align:center;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--text);white-space:nowrap;}
+  table.weekly td:first-child{text-align:left;color:var(--muted);position:sticky;left:0;background:var(--panel);z-index:1;font-size:11px;}
+  table.weekly tbody tr:last-child td{border-bottom:none;}
+  table.weekly td.na{color:var(--muted);}
+  .weeklynote{font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.4;}
+
   .panelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
   .panelhead h3{margin:0;}
   .btn-print{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
@@ -155,7 +168,7 @@
     body{background:#fff;color:#000;}
     .livetag, header.top, #warnBox, .banner, .inputs, .tiles, footer.foot, .spotlink,
     .btn-print, .dayhint, .maphint, .leaflet-control-container, .fuelnote, .mapinputs, .conditions, .printhint,
-    .tablescrollhint{display:none!important;}
+    .tablescrollhint, .weeklyPanel{display:none!important;}
 
     body.printing-map .dayScanPanel{display:none!important;}
     body.printing-map .tablePanel{display:none!important;}
@@ -245,6 +258,15 @@
     <div class="windline"><span>Transport wind: <b id="windTxt">—</b></span><span>Plume toward <b id="plumeTxt">—</b></span></div>
     <div class="map-legend" id="mapLegend"></div>
     <div class="fuelnote">This is a planning estimate based on general fire behavior principles, not the official FDACS Simple Smoke Screening Tool's calculation. Always cross-check with that tool, VSmoke-Web, or a test fire.</div>
+  </div>
+
+  <div class="panel weeklyPanel">
+    <h3>Weekly summary</h3>
+    <div class="weeklywrap">
+      <table class="weekly" id="weeklyTable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="tablescrollhint">Swipe to see all days →</div>
+    <div class="weeklynote">Wind Gust is pulled directly from the NWS forecast grid. Ventilation Rate (Mixing Height × Transport Wind ÷ 1000) and Prob. of Thunder % (from NWS coverage wording) are estimates computed by this app, not official NWS values.</div>
   </div>
 
   <div class="panel tablePanel" style="margin-bottom:16px;">
@@ -344,6 +366,44 @@ function bearingToCompass(deg){
   const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   return dirs[Math.round(deg/22.5)%16];
 }
+function bearingToArrow(deg){
+  // Arrow points in the direction the wind is blowing TOWARD (opposite the
+  // "from" compass bearing), matching how the reference weekly summary draws them.
+  const arrows=['↓','↙','←','↖','↑','↗','→','↘'];
+  return arrows[Math.round(((deg+180)%360)/45)%8];
+}
+
+// Weekly summary heatmap color math. Hex values mirror the --heat-* custom
+// properties in :root — kept here as plain JS since reading CSS custom
+// properties back out per-cell isn't worth the overhead for a static mapping.
+const HEAT_COLORS = {warm:'#C15B4E', cool:'#4F9A6B', wind:'#8B7FC7', sky:'#5B8AA6', neutral:'#8C9686',
+  go:'#4F9A6B', caution:'#C99A3E', nogo:'#C15B4E'};
+function hexToRgb(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function mixRgb(a, b, t){
+  return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
+}
+// Single-hue sequential ramp against a fixed domain (not normalized per-row) so a
+// uniformly bad week doesn't read as "fine" just because it's relatively high/low.
+function seqStyle(value, min, max, hueKey, invert){
+  if(value==null || isNaN(value)) return '';
+  let t = (value-min)/(max-min); t = Math.max(0, Math.min(1, t)); if(invert) t = 1-t;
+  const rgb = hexToRgb(HEAT_COLORS[hueKey]);
+  const alpha = (0.1+t*0.5).toFixed(2);
+  return 'background:rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+alpha+')';
+}
+// Go/caution/nogo ramp for metrics with real safety semantics (ventilation rate,
+// LVORI), reusing the app's existing status colors instead of a generic hue.
+function statusStyle(value, min, max, invert){
+  if(value==null || isNaN(value)) return '';
+  let t = (value-min)/(max-min); t = Math.max(0, Math.min(1, t)); if(invert) t = 1-t;
+  const stops = [hexToRgb(HEAT_COLORS.go), hexToRgb(HEAT_COLORS.caution), hexToRgb(HEAT_COLORS.nogo)];
+  const c = t<0.5 ? mixRgb(stops[0], stops[1], t/0.5) : mixRgb(stops[1], stops[2], (t-0.5)/0.5);
+  const alpha = (0.22+t*0.33).toFixed(2);
+  return 'background:rgba('+c[0]+','+c[1]+','+c[2]+','+alpha+')';
+}
 
 function parseISODuration(iso){
   const m = iso.match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/);
@@ -383,6 +443,16 @@ function aggregateByDay(expanded, mode){
   const result={};
   for(const [day,vals] of Object.entries(byDay)) result[day]= mode==='max'?Math.max(...vals):Math.min(...vals);
   return result;
+}
+function aggregateByDayWithHour(expanded, mode){
+  const byDay={};
+  for(const e of expanded){
+    if(e.hour<WINDOW_START||e.hour>WINDOW_END) continue;
+    const cur = byDay[e.dateKey];
+    const better = !cur || (mode==='max' ? e.value>cur.value : e.value<cur.value);
+    if(better) byDay[e.dateKey] = {value:e.value, hour:e.hour};
+  }
+  return byDay;
 }
 function sampleByDay(expanded){
   const byDay={};
@@ -425,6 +495,7 @@ function fmtHour(h){
 }
 const C2F = c => c*9/5+32;
 const KMH2MPH = k => k/1.60934;
+const KMH2KT = k => k/1.852;
 const M2FT = m => m*3.28084;
 const MM2IN = mm => mm/25.4;
 const M2MI = m => m/1609.34;
@@ -434,6 +505,15 @@ const COVERAGE_LABELS = {
   isolated:'Isol', few:'Few', scattered:'Scat', numerous:'Numerous',
   occasional:'Occas', frequent:'Freq', intermittent:'Intermit', periods:'Periods',
   areas:'Areas', brief:'Brief', patchy:'Patchy', widespread:'Widespread'
+};
+// NWS doesn't publish a numeric thunderstorm probability, only coverage words.
+// Standard NWS coverage->percentage convention (NWS Directive 10-503), used to
+// give the weekly summary a number to shade instead of just a word.
+const COVERAGE_PCT = {
+  slight_chance:20, chance:40, likely:70, definite:100,
+  isolated:20, few:20, scattered:30, numerous:60,
+  occasional:30, frequent:60, intermittent:40, periods:50,
+  areas:60, brief:20, patchy:20, widespread:60
 };
 const WEATHER_LABELS = {
   thunderstorms:'Tstms', rain:'Rain', rain_showers:'Rain Showers', snow:'Snow',
@@ -449,15 +529,20 @@ function parseWeatherEntry(valueArr){
   const top = active[0];
   const label = (prettyCoverage(top.coverage)+' '+prettyWeather(top.weather)).trim();
   const thunderEntry = active.find(v=>v.weather==='thunderstorms');
-  return {text:label, hasThunder:!!thunderEntry, thunderCoverage: thunderEntry?prettyCoverage(thunderEntry.coverage):null};
+  return {text:label, hasThunder:!!thunderEntry, thunderCoverage: thunderEntry?prettyCoverage(thunderEntry.coverage):null,
+    thunderCoverageRaw: thunderEntry?thunderEntry.coverage:null};
 }
 function daySummaryFromWeather(expandedWeather){
   const byDay={};
   for(const e of expandedWeather){
-    if(!byDay[e.dateKey]) byDay[e.dateKey] = {thunderSeen:false, thunderCoverages:[], precipHours:[], topText:'None'};
+    if(!byDay[e.dateKey]) byDay[e.dateKey] = {thunderSeen:false, thunderCoverages:[], thunderMaxPct:0, precipHours:[], topText:'None'};
     const p = parseWeatherEntry(e.value);
     const d = byDay[e.dateKey];
-    if(p.hasThunder){ d.thunderSeen=true; d.thunderCoverages.push(p.thunderCoverage); }
+    if(p.hasThunder){
+      d.thunderSeen=true; d.thunderCoverages.push(p.thunderCoverage);
+      const pct = COVERAGE_PCT[p.thunderCoverageRaw] ?? 0;
+      if(pct>d.thunderMaxPct) d.thunderMaxPct=pct;
+    }
     if(p.text!=='None'){ d.precipHours.push(e.hour); if(d.topText==='None') d.topText=p.text; }
   }
   const result={};
@@ -465,6 +550,7 @@ function daySummaryFromWeather(expandedWeather){
     result[day] = {
       precipType: d.topText,
       thunderChance: d.thunderSeen ? (d.thunderCoverages[0]||'Chance') : null,
+      thunderMaxPct: d.thunderSeen ? d.thunderMaxPct : null,
       precipBeginHour: d.precipHours.length ? d.precipHours[0] : null,
       precipEndHour: d.precipHours.length ? d.precipHours[d.precipHours.length-1] : null,
       precipDurationHrs: d.precipHours.length,
@@ -557,24 +643,54 @@ async function fetchWeather(lat, lng){
   const wind20DirL = g.twentyFootWindDirection && g.twentyFootWindDirection.values && g.twentyFootWindDirection.values.length ? g.twentyFootWindDirection : null;
   const weatherL = g.weather && g.weather.values && g.weather.values.length ? g.weather : null;
   if(!weatherL) warnings.push('Precip type/thunder detail not reported by this NWS office.');
+  const dewpointL = g.dewpoint && g.dewpoint.values && g.dewpoint.values.length ? g.dewpoint : null;
+  const windGustL = g.windGust && g.windGust.values && g.windGust.values.length ? g.windGust : null;
 
   const windMax = aggregateByDay(expandLayer(windSpeedL, tz), 'max');
+  const windMin = aggregateByDay(expandLayer(windSpeedL, tz), 'min');
   const twMin = aggregateByDay(expandLayer(transportSpdL, tz), 'min');
   const mhMax = aggregateByDay(expandLayer(mixingL, tz), 'max');
+  const mhMin = aggregateByDay(expandLayer(mixingL, tz), 'min');
   const diMax = aggregateByDay(expandLayer(dispersionL, tz), 'max');
   const tempMax = aggregateByDay(expandLayer(tempL, tz), 'max');
+  const tempMin = aggregateByDay(expandLayer(tempL, tz), 'min');
   const rhMin = aggregateByDay(expandLayer(rhL, tz), 'min');
+  const rhMax = aggregateByDay(expandLayer(rhL, tz), 'max');
   const lvoriMax = lvoriL ? aggregateByDay(expandLayer(lvoriL, tz), 'max') : {};
   const twDirSample = sampleByDay(expandLayer(transportDirL, tz));
   const windDirSample = sampleByDay(expandLayer(windDirL, tz));
 
   const skyMax = skyCoverL ? aggregateByDay(expandLayer(skyCoverL, tz), 'max') : {};
+  const skyMin = skyCoverL ? aggregateByDay(expandLayer(skyCoverL, tz), 'min') : {};
   const popMax = popL ? aggregateByDay(expandLayer(popL, tz), 'max') : {};
   const qpfSumMm = qpfL ? sumAccumByDay(qpfL, tz) : {};
   const visMin = visL ? aggregateByDay(expandLayer(visL, tz), 'min') : {};
   const wind20Max = wind20SpdL ? aggregateByDay(expandLayer(wind20SpdL, tz), 'max') : {};
+  const wind20Min = wind20SpdL ? aggregateByDay(expandLayer(wind20SpdL, tz), 'min') : {};
   const wind20DirSample = wind20DirL ? sampleByDay(expandLayer(wind20DirL, tz)) : {};
   const weatherDaySummary = weatherL ? daySummaryFromWeather(expandLayer(weatherL, tz)) : {};
+  const dewMax = dewpointL ? aggregateByDay(expandLayer(dewpointL, tz), 'max') : {};
+  const dewMin = dewpointL ? aggregateByDay(expandLayer(dewpointL, tz), 'min') : {};
+  const gustMaxWithHour = windGustL ? aggregateByDayWithHour(expandLayer(windGustL, tz), 'max') : {};
+
+  // Ventilation rate isn't an NWS field — compute it hourly as the standard fire-weather
+  // venting formula (Mixing Height(ft) x Transport Wind(kt), scaled to thousands) and
+  // then take the day's max/min, same as any other derived hourly series.
+  const mhHourFt = toHourMap(expandLayer(mixingL, tz), M2FT);
+  const twHourKt = toHourMap(expandLayer(transportSpdL, tz), KMH2KT);
+  const ventExpanded = [];
+  for(const dateKey of Object.keys(mhHourFt)){
+    const twHours = twHourKt[dateKey];
+    if(!twHours) continue;
+    for(const hourStr of Object.keys(mhHourFt[dateKey])){
+      const hour = parseInt(hourStr);
+      if(twHours[hour]==null) continue;
+      ventExpanded.push({dateKey, hour, value: (mhHourFt[dateKey][hour]*twHours[hour])/1000});
+    }
+  }
+  const ventMax = (mixingL && transportSpdL) ? aggregateByDay(ventExpanded, 'max') : {};
+  const ventMin = (mixingL && transportSpdL) ? aggregateByDay(ventExpanded, 'min') : {};
+  const windDirHourly = windDirL ? toHourMap(expandLayer(windDirL, tz)) : {};
 
   const days = Object.keys(tempMax).sort().slice(0,7);
   if(days.length===0) throw new Error('No forecast data returned for the daytime window at this point.');
@@ -595,13 +711,28 @@ async function fetchWeather(lat, lng){
     const visU = visL && visMin[dateKey]!=null ? M2MI(visMin[dateKey]) : null;
     const w20U = wind20SpdL ? KMH2MPH(wind20Max[dateKey]) : null;
     const w20DirU = wind20DirSample[dateKey] != null ? wind20DirSample[dateKey] : null;
-    const wx = weatherDaySummary[dateKey] || {precipType:'—', thunderChance:null, precipBeginHour:null, precipEndHour:null, precipDurationHrs:0};
+    const wx = weatherDaySummary[dateKey] || {precipType:'—', thunderChance:null, thunderMaxPct:null, precipBeginHour:null, precipEndHour:null, precipDurationHrs:0};
     const dt = new Date(dateKey+'T12:00:00');
     const label = dt.toLocaleDateString('en-US',{weekday:'short',day:'2-digit'}).toUpperCase().replace(',','');
+    const gust = gustMaxWithHour[dateKey];
     return {dateKey, label, wind:wU, windDir:windDirU, tw:twU, mh:mhU, di:diU, temp:tU, rh:rU, lvori:lU, windFrom:dirU,
       sky:skyU, pop:popU, qpf:qpfU, vis:visU, wind20:w20U, wind20Dir:w20DirU,
-      precipType:wx.precipType, thunderChance:wx.thunderChance,
-      precipBeginHour:wx.precipBeginHour, precipEndHour:wx.precipEndHour, precipDurationHrs:wx.precipDurationHrs};
+      precipType:wx.precipType, thunderChance:wx.thunderChance, thunderMaxPct:wx.thunderMaxPct,
+      precipBeginHour:wx.precipBeginHour, precipEndHour:wx.precipEndHour, precipDurationHrs:wx.precipDurationHrs,
+      tempMin: tempL ? C2F(tempMin[dateKey]) : null,
+      rhMax: rhL ? rhMax[dateKey] : null,
+      dewMax: dewpointL ? C2F(dewMax[dateKey]) : null,
+      dewMin: dewpointL ? C2F(dewMin[dateKey]) : null,
+      windMin: windSpeedL ? KMH2MPH(windMin[dateKey]) : null,
+      wind20Min: wind20SpdL ? KMH2MPH(wind20Min[dateKey]) : null,
+      gustMax: gust ? KMH2MPH(gust.value) : null,
+      gustHour: gust ? gust.hour : null,
+      gustDir: gust ? (windDirHourly[dateKey]||{})[gust.hour] : null,
+      skyMin: skyCoverL ? skyMin[dateKey] : null,
+      mhMin: mixingL ? M2FT(mhMin[dateKey]) : null,
+      ventMax: (mixingL && transportSpdL) ? ventMax[dateKey] : null,
+      ventMin: (mixingL && transportSpdL) ? ventMin[dateKey] : null,
+    };
   });
 
   const hourly = {
@@ -780,7 +911,55 @@ function renderAll(){
   renderDayChips();
   updateCone(day);
   renderHourlyTable(day.dateKey);
+  renderWeeklyTable();
   document.getElementById('stamp').textContent = day.label+' · daytime window '+WINDOW_START+':00\u2013'+WINDOW_END+':00 local';
+}
+
+const WEEKLY_ROWS = [
+  {label:'Max Temp, °F', get:d=>d.temp, color:v=>seqStyle(v,30,100,'warm')},
+  {label:'Min Temp, °F', get:d=>d.tempMin, color:v=>seqStyle(v,30,100,'warm')},
+  {label:'Max RH, %', get:d=>d.rhMax, color:v=>seqStyle(v,0,100,'cool')},
+  {label:'Min RH, %', get:d=>d.rh, color:v=>seqStyle(v,0,100,'cool')},
+  {label:'Max Dewpoint, °F', get:d=>d.dewMax, color:v=>seqStyle(v,30,80,'cool')},
+  {label:'Min Dewpoint, °F', get:d=>d.dewMin, color:v=>seqStyle(v,30,80,'cool')},
+  {label:'Max Wind, mph', get:d=>(d.wind20!=null?d.wind20:d.wind), color:v=>seqStyle(v,0,30,'wind')},
+  {label:'Min Wind, mph', get:d=>(d.wind20Min!=null?d.wind20Min:d.windMin), color:v=>seqStyle(v,0,30,'wind')},
+  {label:'Max Wind Gust, time/dir.', special:'gusttime'},
+  {label:'Max Wind Gust, mph', get:d=>d.gustMax, color:v=>seqStyle(v,0,50,'wind')},
+  {label:'Max Prob. of Precip., %', get:d=>d.pop, color:v=>seqStyle(v,0,100,'sky')},
+  {label:'Max Cloud Cover, %', get:d=>d.sky, color:v=>seqStyle(v,0,100,'sky')},
+  {label:'Min Cloud Cover, %', get:d=>d.skyMin, color:v=>seqStyle(v,0,100,'sky')},
+  {label:'Max Prob. of Thunder, %', get:d=>d.thunderMaxPct, color:v=>seqStyle(v,0,100,'sky')},
+  {label:'Max Mixing Height, ft', get:d=>d.mh, color:v=>seqStyle(v,0,6000,'neutral')},
+  {label:'Min Mixing Height, ft', get:d=>d.mhMin, color:v=>seqStyle(v,0,6000,'neutral')},
+  {label:'Max Vent. Rate, kt-ft', get:d=>d.ventMax, color:v=>statusStyle(v,0,100,true)},
+  {label:'Min Vent. Rate, kt-ft', get:d=>d.ventMin, color:v=>statusStyle(v,0,100,true)},
+  {label:'Max LVORI', get:d=>d.lvori, color:v=>statusStyle(v,0,10,false)},
+  {label:'Max Dispersion (NDFD)', get:d=>d.di, color:null},
+];
+
+function weeklyCellHTML(value, decimals, styleFn){
+  if(value==null || isNaN(value)) return '<td class="na">—</td>';
+  const num = decimals>0 ? value.toFixed(decimals) : Math.round(value);
+  const style = styleFn ? styleFn(value) : '';
+  return '<td'+(style?' style="'+style+'"':'')+'>'+num+'</td>';
+}
+
+function renderWeeklyTable(){
+  const table = document.getElementById('weeklyTable');
+  if(!dayData.length){ table.querySelector('thead').innerHTML=''; table.querySelector('tbody').innerHTML=''; return; }
+  table.querySelector('thead').innerHTML = '<tr><th></th>'+dayData.map(d=>'<th>'+d.label+'</th>').join('')+'</tr>';
+  table.querySelector('tbody').innerHTML = WEEKLY_ROWS.map(row=>{
+    const cells = dayData.map(d=>{
+      if(row.special==='gusttime'){
+        if(d.gustHour==null || d.gustDir==null) return '<td class="na">—</td>';
+        const style = seqStyle(d.gustMax,0,50,'wind');
+        return '<td'+(style?' style="'+style+'"':'')+'>'+fmtHour(d.gustHour)+' '+bearingToArrow(d.gustDir)+'</td>';
+      }
+      return weeklyCellHTML(row.get(d), row.decimals||0, row.color);
+    }).join('');
+    return '<tr><td>'+row.label+'</td>'+cells+'</tr>';
+  }).join('');
 }
 
 function fmtCell(v, decimals, dirMap, hour){
