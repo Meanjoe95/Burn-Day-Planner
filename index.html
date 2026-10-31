@@ -16,7 +16,6 @@
     --caution:#C99A3E; --caution-dim:#332B1C;
     --nogo:#C15B4E; --nogo-dim:#331F1C;
     --info:#5B8AA6;
-    --heat-warm:#C15B4E; --heat-cool:#4F9A6B; --heat-wind:#8B7FC7; --heat-sky:#5B8AA6; --heat-neutral:#8C9686;
     --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   }
   *{box-sizing:border-box;}
@@ -373,36 +372,18 @@ function bearingToArrow(deg){
   return arrows[Math.round(((deg+180)%360)/45)%8];
 }
 
-// Weekly summary heatmap color math. Hex values mirror the --heat-* custom
-// properties in :root — kept here as plain JS since reading CSS custom
-// properties back out per-cell isn't worth the overhead for a static mapping.
-const HEAT_COLORS = {warm:'#C15B4E', cool:'#4F9A6B', wind:'#8B7FC7', sky:'#5B8AA6', neutral:'#8C9686',
-  go:'#4F9A6B', caution:'#C99A3E', nogo:'#C15B4E'};
+// Weekly summary cell color — mirrors the app's existing go/caution/nogo prescription
+// colors (not a magnitude gradient), so a row is only colored when it reuses a real
+// threshold function from computeStatuses(); everything else stays neutral.
+const HEAT_COLORS = {go:'#4F9A6B', caution:'#C99A3E', nogo:'#C15B4E'};
 function hexToRgb(hex){
   const h = hex.replace('#','');
   return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
 }
-function mixRgb(a, b, t){
-  return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
-}
-// Single-hue sequential ramp against a fixed domain (not normalized per-row) so a
-// uniformly bad week doesn't read as "fine" just because it's relatively high/low.
-function seqStyle(value, min, max, hueKey, invert){
-  if(value==null || isNaN(value)) return '';
-  let t = (value-min)/(max-min); t = Math.max(0, Math.min(1, t)); if(invert) t = 1-t;
-  const rgb = hexToRgb(HEAT_COLORS[hueKey]);
-  const alpha = (0.1+t*0.5).toFixed(2);
-  return 'background:rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+alpha+')';
-}
-// Go/caution/nogo ramp for metrics with real safety semantics (ventilation rate,
-// LVORI), reusing the app's existing status colors instead of a generic hue.
-function statusStyle(value, min, max, invert){
-  if(value==null || isNaN(value)) return '';
-  let t = (value-min)/(max-min); t = Math.max(0, Math.min(1, t)); if(invert) t = 1-t;
-  const stops = [hexToRgb(HEAT_COLORS.go), hexToRgb(HEAT_COLORS.caution), hexToRgb(HEAT_COLORS.nogo)];
-  const c = t<0.5 ? mixRgb(stops[0], stops[1], t/0.5) : mixRgb(stops[1], stops[2], (t-0.5)/0.5);
-  const alpha = (0.22+t*0.33).toFixed(2);
-  return 'background:rgba('+c[0]+','+c[1]+','+c[2]+','+alpha+')';
+function statusCellStyle(status){
+  if(!status) return '';
+  const rgb = hexToRgb(HEAT_COLORS[status]);
+  return 'background:rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0.42)';
 }
 
 function parseISODuration(iso){
@@ -915,48 +896,52 @@ function renderAll(){
   document.getElementById('stamp').textContent = day.label+' · daytime window '+WINDOW_START+':00\u2013'+WINDOW_END+':00 local';
 }
 
+// status(d, canopy) returns 'go'|'caution'|'nogo'|null — only set for rows that reuse a
+// real threshold from computeStatuses(); every other row is left neutral rather than
+// inventing a burn-restriction judgment the app doesn't actually make elsewhere.
 const WEEKLY_ROWS = [
-  {label:'Max Temp, °F', get:d=>d.temp, color:v=>seqStyle(v,30,100,'warm')},
-  {label:'Min Temp, °F', get:d=>d.tempMin, color:v=>seqStyle(v,30,100,'warm')},
-  {label:'Max RH, %', get:d=>d.rhMax, color:v=>seqStyle(v,0,100,'cool')},
-  {label:'Min RH, %', get:d=>d.rh, color:v=>seqStyle(v,0,100,'cool')},
-  {label:'Max Dewpoint, °F', get:d=>d.dewMax, color:v=>seqStyle(v,30,80,'cool')},
-  {label:'Min Dewpoint, °F', get:d=>d.dewMin, color:v=>seqStyle(v,30,80,'cool')},
-  {label:'Max Wind, mph', get:d=>(d.wind20!=null?d.wind20:d.wind), color:v=>seqStyle(v,0,30,'wind')},
-  {label:'Min Wind, mph', get:d=>(d.wind20Min!=null?d.wind20Min:d.windMin), color:v=>seqStyle(v,0,30,'wind')},
+  {label:'Max Temp, °F', get:d=>d.temp, status:(d,canopy)=>statusTemp(d.temp,canopy)},
+  {label:'Min Temp, °F', get:d=>d.tempMin},
+  {label:'Max RH, %', get:d=>d.rhMax},
+  {label:'Min RH, %', get:d=>d.rh, status:d=>statusRH(d.rh)},
+  {label:'Max Dewpoint, °F', get:d=>d.dewMax},
+  {label:'Min Dewpoint, °F', get:d=>d.dewMin},
+  {label:'Max Wind, mph', get:d=>(d.wind20!=null?d.wind20:d.wind), status:d=>statusSurfaceWind(d.wind20!=null?d.wind20:d.wind)},
+  {label:'Min Wind, mph', get:d=>(d.wind20Min!=null?d.wind20Min:d.windMin)},
   {label:'Max Wind Gust, time/dir.', special:'gusttime'},
-  {label:'Max Wind Gust, mph', get:d=>d.gustMax, color:v=>seqStyle(v,0,50,'wind')},
-  {label:'Max Prob. of Precip., %', get:d=>d.pop, color:v=>seqStyle(v,0,100,'sky')},
-  {label:'Max Cloud Cover, %', get:d=>d.sky, color:v=>seqStyle(v,0,100,'sky')},
-  {label:'Min Cloud Cover, %', get:d=>d.skyMin, color:v=>seqStyle(v,0,100,'sky')},
-  {label:'Max Prob. of Thunder, %', get:d=>d.thunderMaxPct, color:v=>seqStyle(v,0,100,'sky')},
-  {label:'Max Mixing Height, ft', get:d=>d.mh, color:v=>seqStyle(v,0,6000,'neutral')},
-  {label:'Min Mixing Height, ft', get:d=>d.mhMin, color:v=>seqStyle(v,0,6000,'neutral')},
-  {label:'Max Vent. Rate, kt-ft', get:d=>d.ventMax, color:v=>statusStyle(v,0,100,true)},
-  {label:'Min Vent. Rate, kt-ft', get:d=>d.ventMin, color:v=>statusStyle(v,0,100,true)},
-  {label:'Max LVORI', get:d=>d.lvori, color:v=>statusStyle(v,0,10,false)},
-  {label:'Max Dispersion (NDFD)', get:d=>d.di, color:null},
+  {label:'Max Wind Gust, mph', get:d=>d.gustMax},
+  {label:'Max Prob. of Precip., %', get:d=>d.pop},
+  {label:'Max Cloud Cover, %', get:d=>d.sky},
+  {label:'Min Cloud Cover, %', get:d=>d.skyMin},
+  {label:'Max Prob. of Thunder, %', get:d=>d.thunderMaxPct},
+  {label:'Max Mixing Height, ft', get:d=>d.mh, status:d=>statusMixingHeight(d.mh)},
+  {label:'Min Mixing Height, ft', get:d=>d.mhMin},
+  {label:'Max Vent. Rate, kt-ft', get:d=>d.ventMax},
+  {label:'Min Vent. Rate, kt-ft', get:d=>d.ventMin},
+  {label:'Max LVORI', get:d=>d.lvori, status:d=>statusLVORI(d.lvori)},
+  {label:'Max Dispersion (NDFD)', get:d=>d.di, status:d=>statusDispersion(d.di)},
 ];
 
-function weeklyCellHTML(value, decimals, styleFn){
+function weeklyCellHTML(value, decimals, status){
   if(value==null || isNaN(value)) return '<td class="na">—</td>';
   const num = decimals>0 ? value.toFixed(decimals) : Math.round(value);
-  const style = styleFn ? styleFn(value) : '';
+  const style = statusCellStyle(status);
   return '<td'+(style?' style="'+style+'"':'')+'>'+num+'</td>';
 }
 
 function renderWeeklyTable(){
   const table = document.getElementById('weeklyTable');
   if(!dayData.length){ table.querySelector('thead').innerHTML=''; table.querySelector('tbody').innerHTML=''; return; }
+  const canopy = document.getElementById('canopy').value;
   table.querySelector('thead').innerHTML = '<tr><th></th>'+dayData.map(d=>'<th>'+d.label+'</th>').join('')+'</tr>';
   table.querySelector('tbody').innerHTML = WEEKLY_ROWS.map(row=>{
     const cells = dayData.map(d=>{
       if(row.special==='gusttime'){
         if(d.gustHour==null || d.gustDir==null) return '<td class="na">—</td>';
-        const style = seqStyle(d.gustMax,0,50,'wind');
-        return '<td'+(style?' style="'+style+'"':'')+'>'+fmtHour(d.gustHour)+' '+bearingToArrow(d.gustDir)+'</td>';
+        return '<td>'+fmtHour(d.gustHour)+' '+bearingToArrow(d.gustDir)+'</td>';
       }
-      return weeklyCellHTML(row.get(d), row.decimals||0, row.color);
+      const status = row.status ? row.status(d, canopy) : null;
+      return weeklyCellHTML(row.get(d), row.decimals||0, status);
     }).join('');
     return '<tr><td>'+row.label+'</td>'+cells+'</tr>';
   }).join('');
