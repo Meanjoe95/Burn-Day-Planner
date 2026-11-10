@@ -13,7 +13,7 @@
     --ink:#10160F; --panel:#1B2418; --panel-2:#222D1D; --line:#2E3B26;
     --text:#E7EEEA; --muted:#8C9686;
     --go:#4F9A6B; --go-dim:#25332B;
-    --caution:#C99A3E; --caution-dim:#332B1C;
+    --caution:#E0B33C; --caution-dim:#332B1C;
     --nogo:#C15B4E; --nogo-dim:#331F1C;
     --info:#5B8AA6;
     --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
@@ -375,7 +375,7 @@ function bearingToArrow(deg){
 // Weekly summary cell color — mirrors the app's existing go/caution/nogo prescription
 // colors (not a magnitude gradient), so a row is only colored when it reuses a real
 // threshold function from computeStatuses(); everything else stays neutral.
-const HEAT_COLORS = {go:'#4F9A6B', caution:'#C99A3E', nogo:'#C15B4E'};
+const HEAT_COLORS = {go:'#4F9A6B', caution:'#E0B33C', nogo:'#C15B4E'};
 function hexToRgb(hex){
   const h = hex.replace('#','');
   return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
