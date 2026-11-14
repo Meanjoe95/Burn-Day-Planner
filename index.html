@@ -366,10 +366,10 @@ function bearingToCompass(deg){
   return dirs[Math.round(deg/22.5)%16];
 }
 function bearingToArrow(deg){
-  // Arrow points in the direction the wind is blowing TOWARD (opposite the
-  // "from" compass bearing), matching how the reference weekly summary draws them.
+  // Arrow points in the direction the wind is blowing TOWARD (downwind), matching
+  // standard wind-map convention, given deg is the "from" bearing NWS reports.
   const arrows=['↓','↙','←','↖','↑','↗','→','↘'];
-  return arrows[Math.round(((deg+180)%360)/45)%8];
+  return arrows[Math.round(deg/45)%8];
 }
 
 // Weekly summary cell color — mirrors the app's existing go/caution/nogo prescription
