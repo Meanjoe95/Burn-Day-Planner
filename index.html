@@ -20,7 +20,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:960px;margin:0 auto;padding:14px 14px 40px;}
+  .wrap{max-width:1280px;margin:0 auto;padding:14px 14px 40px;}
 
   .livetag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
     letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
@@ -53,9 +53,9 @@
     font-family:var(--mono);font-size:13px;padding:7px 8px;border-radius:3px;}
   .inputs input:focus,.inputs select:focus{outline:1px solid var(--muted);}
 
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:16px;}
   @media(max-width:640px){.tiles{grid-template-columns:repeat(2,1fr);}}
-  .tile{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 12px;border-left:3px solid var(--go);}
+  .tile{background:var(--panel);border:0;border-radius:2px;padding:12px 14px;border-left:3px solid var(--go);}
   .tile.caution{border-left-color:var(--caution);}
   .tile.nogo{border-left-color:var(--nogo);}
   .tile.na{border-left-color:var(--line);}
@@ -72,9 +72,9 @@
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px;margin-bottom:16px;}
   .panel h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:500;}
 
-  .dayScanPanel{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;overflow:hidden;}
-  .days{display:flex;gap:6px;justify-content:center;}
-  .day{flex:0 0 auto;width:70px;text-align:center;padding:9px 4px;border-radius:4px;border:1px solid var(--line);
+  .dayScanPanel{overflow:hidden;}
+  .days{display:flex;gap:6px;}
+  .day{flex:1 1 0;min-width:0;text-align:center;padding:9px 4px;border-radius:4px;border:1px solid var(--line);
     cursor:pointer;background:var(--panel-2);transition:border-color .15s;}
   .day:hover{border-color:var(--muted);}
   .day.sel{border-color:var(--text);}
@@ -84,9 +84,8 @@
   .day.n .dot{background:var(--nogo);}
   .dayhint{font-size:11px;color:var(--muted);margin-top:10px;text-align:center;}
   @media(max-width:600px){
-    .dayScanPanel{width:100%;}
     .days{gap:4px;}
-    .day{flex:1 1 0;width:auto;min-width:0;padding:8px 2px;}
+    .day{padding:8px 2px;}
     .day .d{font-size:9px;}
   }
 
@@ -134,14 +133,15 @@
   @media(max-width:760px){.tablescrollhint{display:block;}}
 
   .weeklywrap{max-height:480px;overflow:auto;border:1px solid var(--line);border-radius:3px;-webkit-overflow-scrolling:touch;}
-  table.weekly{width:100%;min-width:620px;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:auto;}
+  table.weekly{width:100%;min-width:740px;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:fixed;}
   table.weekly thead th{position:sticky;top:0;background:var(--panel-2);text-align:center;
     font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;
     padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap;}
-  table.weekly thead th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:var(--panel-2);}
-  table.weekly td{text-align:center;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--text);white-space:nowrap;}
-  table.weekly td:first-child{text-align:left;color:var(--muted);position:sticky;left:0;background:var(--panel);z-index:1;font-size:11px;}
+  table.weekly thead th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:var(--panel-2);width:190px;}
+  table.weekly td{text-align:center;padding:7px 8px;color:var(--text);white-space:nowrap;}
+  table.weekly td:first-child{text-align:left;color:var(--muted);position:sticky;left:0;background:var(--panel);z-index:1;font-size:11px;border-bottom:1px solid var(--line);}
   table.weekly tbody tr:last-child td{border-bottom:none;}
+  .windarrow{display:inline-block;margin-left:4px;line-height:1;}
   table.weekly td.na{color:var(--muted);}
   .weeklynote{font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.4;}
 
@@ -194,7 +194,7 @@
 
   <header class="top">
     <div class="loc">
-      <div><b id="locCoords">29.4760, -82.5630</b></div>
+      <div><b id="locCoords">29.2897, -82.5356</b></div>
       <div class="sub" id="locOffice">Loading nearest NWS office…</div>
     </div>
     <div class="stamp" id="stamp">—</div>
@@ -265,7 +265,7 @@
       <table class="weekly" id="weeklyTable"><thead></thead><tbody></tbody></table>
     </div>
     <div class="tablescrollhint">Swipe to see all days →</div>
-    <div class="weeklynote">Wind Gust is pulled directly from the NWS forecast grid. Ventilation Rate (Mixing Height × Transport Wind ÷ 1000) and Prob. of Thunder % (from NWS coverage wording) are estimates computed by this app, not official NWS values.</div>
+    <div class="weeklynote">Wind Gust is pulled directly from the NWS forecast grid. Ventilation Rate (Mixing Height × Transport Wind ÷ 1000) and Prob. of Thunder % (from NWS coverage wording) are estimates computed by this app, not official NWS values. Wind direction labels give the direction the wind is coming from; the arrow points the way it is blowing.</div>
   </div>
 
   <div class="panel tablePanel" style="margin-bottom:16px;">
@@ -338,7 +338,7 @@ function renderMapLegend(){
     '<span><i style="background:#F2E9D8"></i>forest boundary</span>';
 }
 const WINDOW_START = 9, WINDOW_END = 18;
-let currentLat = 29.476, currentLng = -82.563;
+let currentLat = 29.2897, currentLng = -82.5356;
 let dayData = [];
 let selectedDay = 0;
 let currentOffice = null;
@@ -365,11 +365,13 @@ function bearingToCompass(deg){
   const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   return dirs[Math.round(deg/22.5)%16];
 }
+// Downwind bearing snapped to the same 16 points bearingToCompass uses, so the
+// arrow can never disagree with the compass label beside it.
+function arrowRotation(deg){
+  return ((Math.round(deg/22.5)%16)*22.5+180)%360;
+}
 function bearingToArrow(deg){
-  // Arrow points in the direction the wind is blowing TOWARD (downwind), matching
-  // standard wind-map convention, given deg is the "from" bearing NWS reports.
-  const arrows=['↓','↙','←','↖','↑','↗','→','↘'];
-  return arrows[Math.round(deg/45)%8];
+  return '<span class="windarrow" style="transform:rotate('+arrowRotation(deg)+'deg)">\u2191</span>';
 }
 
 // Weekly summary cell color — mirrors the app's existing go/caution/nogo prescription
@@ -938,7 +940,7 @@ function renderWeeklyTable(){
     const cells = dayData.map(d=>{
       if(row.special==='gusttime'){
         if(d.gustHour==null || d.gustDir==null) return '<td class="na">—</td>';
-        return '<td>'+fmtHour(d.gustHour)+' '+bearingToArrow(d.gustDir)+'</td>';
+        return '<td>'+fmtHour(d.gustHour)+' '+bearingToCompass(d.gustDir)+bearingToArrow(d.gustDir)+'</td>';
       }
       const status = row.status ? row.status(d, canopy) : null;
       return weeklyCellHTML(row.get(d), row.decimals||0, status);
