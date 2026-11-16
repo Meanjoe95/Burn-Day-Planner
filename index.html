@@ -13,14 +13,14 @@
     --ink:#10160F; --panel:#1B2418; --panel-2:#222D1D; --line:#2E3B26;
     --text:#E7EEEA; --muted:#8C9686;
     --go:#4F9A6B; --go-dim:#25332B;
-    --caution:#C99A3E; --caution-dim:#332B1C;
+    --caution:#E0B33C; --caution-dim:#332B1C;
     --nogo:#C15B4E; --nogo-dim:#331F1C;
     --info:#5B8AA6;
     --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:960px;margin:0 auto;padding:14px 14px 40px;}
+  .wrap{max-width:1280px;margin:0 auto;padding:14px 14px 40px;}
 
   .livetag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
     letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
@@ -53,9 +53,9 @@
     font-family:var(--mono);font-size:13px;padding:7px 8px;border-radius:3px;}
   .inputs input:focus,.inputs select:focus{outline:1px solid var(--muted);}
 
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:16px;}
   @media(max-width:640px){.tiles{grid-template-columns:repeat(2,1fr);}}
-  .tile{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 12px;border-left:3px solid var(--go);}
+  .tile{background:var(--panel);border:0;border-radius:2px;padding:12px 14px;border-left:3px solid var(--go);}
   .tile.caution{border-left-color:var(--caution);}
   .tile.nogo{border-left-color:var(--nogo);}
   .tile.na{border-left-color:var(--line);}
@@ -72,9 +72,9 @@
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px;margin-bottom:16px;}
   .panel h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:500;}
 
-  .dayScanPanel{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;overflow:hidden;}
-  .days{display:flex;gap:6px;justify-content:center;}
-  .day{flex:0 0 auto;width:70px;text-align:center;padding:9px 4px;border-radius:4px;border:1px solid var(--line);
+  .dayScanPanel{overflow:hidden;}
+  .days{display:flex;gap:6px;}
+  .day{flex:1 1 0;min-width:0;text-align:center;padding:9px 4px;border-radius:4px;border:1px solid var(--line);
     cursor:pointer;background:var(--panel-2);transition:border-color .15s;}
   .day:hover{border-color:var(--muted);}
   .day.sel{border-color:var(--text);}
@@ -84,9 +84,8 @@
   .day.n .dot{background:var(--nogo);}
   .dayhint{font-size:11px;color:var(--muted);margin-top:10px;text-align:center;}
   @media(max-width:600px){
-    .dayScanPanel{width:100%;}
     .days{gap:4px;}
-    .day{flex:1 1 0;width:auto;min-width:0;padding:8px 2px;}
+    .day{padding:8px 2px;}
     .day .d{font-size:9px;}
   }
 
@@ -133,6 +132,19 @@
   .tablescrollhint{display:none;font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center;}
   @media(max-width:760px){.tablescrollhint{display:block;}}
 
+  .weeklywrap{max-height:480px;overflow:auto;border:1px solid var(--line);border-radius:3px;-webkit-overflow-scrolling:touch;}
+  table.weekly{width:100%;min-width:740px;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:fixed;}
+  table.weekly thead th{position:sticky;top:0;background:var(--panel-2);text-align:center;
+    font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;
+    padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.weekly thead th:first-child{text-align:left;position:sticky;left:0;z-index:3;background:var(--panel-2);width:190px;}
+  table.weekly td{text-align:center;padding:7px 8px;color:var(--text);white-space:nowrap;}
+  table.weekly td:first-child{text-align:left;color:var(--muted);position:sticky;left:0;background:var(--panel);z-index:1;font-size:11px;border-bottom:1px solid var(--line);}
+  table.weekly tbody tr:last-child td{border-bottom:none;}
+  .windarrow{display:inline-block;margin-left:4px;line-height:1;}
+  table.weekly td.na{color:var(--muted);}
+  .weeklynote{font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.4;}
+
   .panelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
   .panelhead h3{margin:0;}
   .btn-print{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
@@ -155,7 +167,7 @@
     body{background:#fff;color:#000;}
     .livetag, header.top, #warnBox, .banner, .inputs, .tiles, footer.foot, .spotlink,
     .btn-print, .dayhint, .maphint, .leaflet-control-container, .fuelnote, .mapinputs, .conditions, .printhint,
-    .tablescrollhint{display:none!important;}
+    .tablescrollhint, .weeklyPanel{display:none!important;}
 
     body.printing-map .dayScanPanel{display:none!important;}
     body.printing-map .tablePanel{display:none!important;}
@@ -182,7 +194,7 @@
 
   <header class="top">
     <div class="loc">
-      <div><b id="locCoords">29.4760, -82.5630</b></div>
+      <div><b id="locCoords">29.2897, -82.5356</b></div>
       <div class="sub" id="locOffice">Loading nearest NWS office…</div>
     </div>
     <div class="stamp" id="stamp">—</div>
@@ -245,6 +257,15 @@
     <div class="windline"><span>Transport wind: <b id="windTxt">—</b></span><span>Plume toward <b id="plumeTxt">—</b></span></div>
     <div class="map-legend" id="mapLegend"></div>
     <div class="fuelnote">This is a planning estimate based on general fire behavior principles, not the official FDACS Simple Smoke Screening Tool's calculation. Always cross-check with that tool, VSmoke-Web, or a test fire.</div>
+  </div>
+
+  <div class="panel weeklyPanel">
+    <h3>Weekly summary</h3>
+    <div class="weeklywrap">
+      <table class="weekly" id="weeklyTable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="tablescrollhint">Swipe to see all days →</div>
+    <div class="weeklynote">Wind Gust is pulled directly from the NWS forecast grid. Ventilation Rate (Mixing Height × Transport Wind ÷ 1000) and Prob. of Thunder % (from NWS coverage wording) are estimates computed by this app, not official NWS values. Wind direction labels give the direction the wind is coming from; the arrow points the way it is blowing.</div>
   </div>
 
   <div class="panel tablePanel" style="margin-bottom:16px;">
@@ -317,7 +338,7 @@ function renderMapLegend(){
     '<span><i style="background:#F2E9D8"></i>forest boundary</span>';
 }
 const WINDOW_START = 9, WINDOW_END = 18;
-let currentLat = 29.476, currentLng = -82.563;
+let currentLat = 29.2897, currentLng = -82.5356;
 let dayData = [];
 let selectedDay = 0;
 let currentOffice = null;
@@ -343,6 +364,28 @@ function wedgePoints(lat,lng,bearingCenter,halfAngle,distMi,steps){
 function bearingToCompass(deg){
   const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   return dirs[Math.round(deg/22.5)%16];
+}
+// Downwind bearing snapped to the same 16 points bearingToCompass uses, so the
+// arrow can never disagree with the compass label beside it.
+function arrowRotation(deg){
+  return ((Math.round(deg/22.5)%16)*22.5+180)%360;
+}
+function bearingToArrow(deg){
+  return '<span class="windarrow" style="transform:rotate('+arrowRotation(deg)+'deg)">\u2191</span>';
+}
+
+// Weekly summary cell color — mirrors the app's existing go/caution/nogo prescription
+// colors (not a magnitude gradient), so a row is only colored when it reuses a real
+// threshold function from computeStatuses(); everything else stays neutral.
+const HEAT_COLORS = {go:'#4F9A6B', caution:'#E0B33C', nogo:'#C15B4E'};
+function hexToRgb(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function statusCellStyle(status){
+  if(!status) return '';
+  const rgb = hexToRgb(HEAT_COLORS[status]);
+  return 'background:rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0.42)';
 }
 
 function parseISODuration(iso){
@@ -383,6 +426,16 @@ function aggregateByDay(expanded, mode){
   const result={};
   for(const [day,vals] of Object.entries(byDay)) result[day]= mode==='max'?Math.max(...vals):Math.min(...vals);
   return result;
+}
+function aggregateByDayWithHour(expanded, mode){
+  const byDay={};
+  for(const e of expanded){
+    if(e.hour<WINDOW_START||e.hour>WINDOW_END) continue;
+    const cur = byDay[e.dateKey];
+    const better = !cur || (mode==='max' ? e.value>cur.value : e.value<cur.value);
+    if(better) byDay[e.dateKey] = {value:e.value, hour:e.hour};
+  }
+  return byDay;
 }
 function sampleByDay(expanded){
   const byDay={};
@@ -425,6 +478,7 @@ function fmtHour(h){
 }
 const C2F = c => c*9/5+32;
 const KMH2MPH = k => k/1.60934;
+const KMH2KT = k => k/1.852;
 const M2FT = m => m*3.28084;
 const MM2IN = mm => mm/25.4;
 const M2MI = m => m/1609.34;
@@ -434,6 +488,15 @@ const COVERAGE_LABELS = {
   isolated:'Isol', few:'Few', scattered:'Scat', numerous:'Numerous',
   occasional:'Occas', frequent:'Freq', intermittent:'Intermit', periods:'Periods',
   areas:'Areas', brief:'Brief', patchy:'Patchy', widespread:'Widespread'
+};
+// NWS doesn't publish a numeric thunderstorm probability, only coverage words.
+// Standard NWS coverage->percentage convention (NWS Directive 10-503), used to
+// give the weekly summary a number to shade instead of just a word.
+const COVERAGE_PCT = {
+  slight_chance:20, chance:40, likely:70, definite:100,
+  isolated:20, few:20, scattered:30, numerous:60,
+  occasional:30, frequent:60, intermittent:40, periods:50,
+  areas:60, brief:20, patchy:20, widespread:60
 };
 const WEATHER_LABELS = {
   thunderstorms:'Tstms', rain:'Rain', rain_showers:'Rain Showers', snow:'Snow',
@@ -449,15 +512,20 @@ function parseWeatherEntry(valueArr){
   const top = active[0];
   const label = (prettyCoverage(top.coverage)+' '+prettyWeather(top.weather)).trim();
   const thunderEntry = active.find(v=>v.weather==='thunderstorms');
-  return {text:label, hasThunder:!!thunderEntry, thunderCoverage: thunderEntry?prettyCoverage(thunderEntry.coverage):null};
+  return {text:label, hasThunder:!!thunderEntry, thunderCoverage: thunderEntry?prettyCoverage(thunderEntry.coverage):null,
+    thunderCoverageRaw: thunderEntry?thunderEntry.coverage:null};
 }
 function daySummaryFromWeather(expandedWeather){
   const byDay={};
   for(const e of expandedWeather){
-    if(!byDay[e.dateKey]) byDay[e.dateKey] = {thunderSeen:false, thunderCoverages:[], precipHours:[], topText:'None'};
+    if(!byDay[e.dateKey]) byDay[e.dateKey] = {thunderSeen:false, thunderCoverages:[], thunderMaxPct:0, precipHours:[], topText:'None'};
     const p = parseWeatherEntry(e.value);
     const d = byDay[e.dateKey];
-    if(p.hasThunder){ d.thunderSeen=true; d.thunderCoverages.push(p.thunderCoverage); }
+    if(p.hasThunder){
+      d.thunderSeen=true; d.thunderCoverages.push(p.thunderCoverage);
+      const pct = COVERAGE_PCT[p.thunderCoverageRaw] ?? 0;
+      if(pct>d.thunderMaxPct) d.thunderMaxPct=pct;
+    }
     if(p.text!=='None'){ d.precipHours.push(e.hour); if(d.topText==='None') d.topText=p.text; }
   }
   const result={};
@@ -465,6 +533,7 @@ function daySummaryFromWeather(expandedWeather){
     result[day] = {
       precipType: d.topText,
       thunderChance: d.thunderSeen ? (d.thunderCoverages[0]||'Chance') : null,
+      thunderMaxPct: d.thunderSeen ? d.thunderMaxPct : null,
       precipBeginHour: d.precipHours.length ? d.precipHours[0] : null,
       precipEndHour: d.precipHours.length ? d.precipHours[d.precipHours.length-1] : null,
       precipDurationHrs: d.precipHours.length,
@@ -557,24 +626,54 @@ async function fetchWeather(lat, lng){
   const wind20DirL = g.twentyFootWindDirection && g.twentyFootWindDirection.values && g.twentyFootWindDirection.values.length ? g.twentyFootWindDirection : null;
   const weatherL = g.weather && g.weather.values && g.weather.values.length ? g.weather : null;
   if(!weatherL) warnings.push('Precip type/thunder detail not reported by this NWS office.');
+  const dewpointL = g.dewpoint && g.dewpoint.values && g.dewpoint.values.length ? g.dewpoint : null;
+  const windGustL = g.windGust && g.windGust.values && g.windGust.values.length ? g.windGust : null;
 
   const windMax = aggregateByDay(expandLayer(windSpeedL, tz), 'max');
+  const windMin = aggregateByDay(expandLayer(windSpeedL, tz), 'min');
   const twMin = aggregateByDay(expandLayer(transportSpdL, tz), 'min');
   const mhMax = aggregateByDay(expandLayer(mixingL, tz), 'max');
+  const mhMin = aggregateByDay(expandLayer(mixingL, tz), 'min');
   const diMax = aggregateByDay(expandLayer(dispersionL, tz), 'max');
   const tempMax = aggregateByDay(expandLayer(tempL, tz), 'max');
+  const tempMin = aggregateByDay(expandLayer(tempL, tz), 'min');
   const rhMin = aggregateByDay(expandLayer(rhL, tz), 'min');
+  const rhMax = aggregateByDay(expandLayer(rhL, tz), 'max');
   const lvoriMax = lvoriL ? aggregateByDay(expandLayer(lvoriL, tz), 'max') : {};
   const twDirSample = sampleByDay(expandLayer(transportDirL, tz));
   const windDirSample = sampleByDay(expandLayer(windDirL, tz));
 
   const skyMax = skyCoverL ? aggregateByDay(expandLayer(skyCoverL, tz), 'max') : {};
+  const skyMin = skyCoverL ? aggregateByDay(expandLayer(skyCoverL, tz), 'min') : {};
   const popMax = popL ? aggregateByDay(expandLayer(popL, tz), 'max') : {};
   const qpfSumMm = qpfL ? sumAccumByDay(qpfL, tz) : {};
   const visMin = visL ? aggregateByDay(expandLayer(visL, tz), 'min') : {};
   const wind20Max = wind20SpdL ? aggregateByDay(expandLayer(wind20SpdL, tz), 'max') : {};
+  const wind20Min = wind20SpdL ? aggregateByDay(expandLayer(wind20SpdL, tz), 'min') : {};
   const wind20DirSample = wind20DirL ? sampleByDay(expandLayer(wind20DirL, tz)) : {};
   const weatherDaySummary = weatherL ? daySummaryFromWeather(expandLayer(weatherL, tz)) : {};
+  const dewMax = dewpointL ? aggregateByDay(expandLayer(dewpointL, tz), 'max') : {};
+  const dewMin = dewpointL ? aggregateByDay(expandLayer(dewpointL, tz), 'min') : {};
+  const gustMaxWithHour = windGustL ? aggregateByDayWithHour(expandLayer(windGustL, tz), 'max') : {};
+
+  // Ventilation rate isn't an NWS field — compute it hourly as the standard fire-weather
+  // venting formula (Mixing Height(ft) x Transport Wind(kt), scaled to thousands) and
+  // then take the day's max/min, same as any other derived hourly series.
+  const mhHourFt = toHourMap(expandLayer(mixingL, tz), M2FT);
+  const twHourKt = toHourMap(expandLayer(transportSpdL, tz), KMH2KT);
+  const ventExpanded = [];
+  for(const dateKey of Object.keys(mhHourFt)){
+    const twHours = twHourKt[dateKey];
+    if(!twHours) continue;
+    for(const hourStr of Object.keys(mhHourFt[dateKey])){
+      const hour = parseInt(hourStr);
+      if(twHours[hour]==null) continue;
+      ventExpanded.push({dateKey, hour, value: (mhHourFt[dateKey][hour]*twHours[hour])/1000});
+    }
+  }
+  const ventMax = (mixingL && transportSpdL) ? aggregateByDay(ventExpanded, 'max') : {};
+  const ventMin = (mixingL && transportSpdL) ? aggregateByDay(ventExpanded, 'min') : {};
+  const windDirHourly = windDirL ? toHourMap(expandLayer(windDirL, tz)) : {};
 
   const days = Object.keys(tempMax).sort().slice(0,7);
   if(days.length===0) throw new Error('No forecast data returned for the daytime window at this point.');
@@ -595,13 +694,28 @@ async function fetchWeather(lat, lng){
     const visU = visL && visMin[dateKey]!=null ? M2MI(visMin[dateKey]) : null;
     const w20U = wind20SpdL ? KMH2MPH(wind20Max[dateKey]) : null;
     const w20DirU = wind20DirSample[dateKey] != null ? wind20DirSample[dateKey] : null;
-    const wx = weatherDaySummary[dateKey] || {precipType:'—', thunderChance:null, precipBeginHour:null, precipEndHour:null, precipDurationHrs:0};
+    const wx = weatherDaySummary[dateKey] || {precipType:'—', thunderChance:null, thunderMaxPct:null, precipBeginHour:null, precipEndHour:null, precipDurationHrs:0};
     const dt = new Date(dateKey+'T12:00:00');
     const label = dt.toLocaleDateString('en-US',{weekday:'short',day:'2-digit'}).toUpperCase().replace(',','');
+    const gust = gustMaxWithHour[dateKey];
     return {dateKey, label, wind:wU, windDir:windDirU, tw:twU, mh:mhU, di:diU, temp:tU, rh:rU, lvori:lU, windFrom:dirU,
       sky:skyU, pop:popU, qpf:qpfU, vis:visU, wind20:w20U, wind20Dir:w20DirU,
-      precipType:wx.precipType, thunderChance:wx.thunderChance,
-      precipBeginHour:wx.precipBeginHour, precipEndHour:wx.precipEndHour, precipDurationHrs:wx.precipDurationHrs};
+      precipType:wx.precipType, thunderChance:wx.thunderChance, thunderMaxPct:wx.thunderMaxPct,
+      precipBeginHour:wx.precipBeginHour, precipEndHour:wx.precipEndHour, precipDurationHrs:wx.precipDurationHrs,
+      tempMin: tempL ? C2F(tempMin[dateKey]) : null,
+      rhMax: rhL ? rhMax[dateKey] : null,
+      dewMax: dewpointL ? C2F(dewMax[dateKey]) : null,
+      dewMin: dewpointL ? C2F(dewMin[dateKey]) : null,
+      windMin: windSpeedL ? KMH2MPH(windMin[dateKey]) : null,
+      wind20Min: wind20SpdL ? KMH2MPH(wind20Min[dateKey]) : null,
+      gustMax: gust ? KMH2MPH(gust.value) : null,
+      gustHour: gust ? gust.hour : null,
+      gustDir: gust ? (windDirHourly[dateKey]||{})[gust.hour] : null,
+      skyMin: skyCoverL ? skyMin[dateKey] : null,
+      mhMin: mixingL ? M2FT(mhMin[dateKey]) : null,
+      ventMax: (mixingL && transportSpdL) ? ventMax[dateKey] : null,
+      ventMin: (mixingL && transportSpdL) ? ventMin[dateKey] : null,
+    };
   });
 
   const hourly = {
@@ -780,7 +894,59 @@ function renderAll(){
   renderDayChips();
   updateCone(day);
   renderHourlyTable(day.dateKey);
+  renderWeeklyTable();
   document.getElementById('stamp').textContent = day.label+' · daytime window '+WINDOW_START+':00\u2013'+WINDOW_END+':00 local';
+}
+
+// status(d, canopy) returns 'go'|'caution'|'nogo'|null — only set for rows that reuse a
+// real threshold from computeStatuses(); every other row is left neutral rather than
+// inventing a burn-restriction judgment the app doesn't actually make elsewhere.
+const WEEKLY_ROWS = [
+  {label:'Max Temp, °F', get:d=>d.temp, status:(d,canopy)=>statusTemp(d.temp,canopy)},
+  {label:'Min Temp, °F', get:d=>d.tempMin},
+  {label:'Max RH, %', get:d=>d.rhMax},
+  {label:'Min RH, %', get:d=>d.rh, status:d=>statusRH(d.rh)},
+  {label:'Max Dewpoint, °F', get:d=>d.dewMax},
+  {label:'Min Dewpoint, °F', get:d=>d.dewMin},
+  {label:'Max Wind, mph', get:d=>(d.wind20!=null?d.wind20:d.wind), status:d=>statusSurfaceWind(d.wind20!=null?d.wind20:d.wind)},
+  {label:'Min Wind, mph', get:d=>(d.wind20Min!=null?d.wind20Min:d.windMin)},
+  {label:'Max Wind Gust, time/dir.', special:'gusttime'},
+  {label:'Max Wind Gust, mph', get:d=>d.gustMax},
+  {label:'Max Prob. of Precip., %', get:d=>d.pop},
+  {label:'Max Cloud Cover, %', get:d=>d.sky},
+  {label:'Min Cloud Cover, %', get:d=>d.skyMin},
+  {label:'Max Prob. of Thunder, %', get:d=>d.thunderMaxPct},
+  {label:'Max Mixing Height, ft', get:d=>d.mh, status:d=>statusMixingHeight(d.mh)},
+  {label:'Min Mixing Height, ft', get:d=>d.mhMin},
+  {label:'Max Vent. Rate, kt-ft', get:d=>d.ventMax},
+  {label:'Min Vent. Rate, kt-ft', get:d=>d.ventMin},
+  {label:'Max LVORI', get:d=>d.lvori, status:d=>statusLVORI(d.lvori)},
+  {label:'Max Dispersion (NDFD)', get:d=>d.di, status:d=>statusDispersion(d.di)},
+];
+
+function weeklyCellHTML(value, decimals, status){
+  if(value==null || isNaN(value)) return '<td class="na">—</td>';
+  const num = decimals>0 ? value.toFixed(decimals) : Math.round(value);
+  const style = statusCellStyle(status);
+  return '<td'+(style?' style="'+style+'"':'')+'>'+num+'</td>';
+}
+
+function renderWeeklyTable(){
+  const table = document.getElementById('weeklyTable');
+  if(!dayData.length){ table.querySelector('thead').innerHTML=''; table.querySelector('tbody').innerHTML=''; return; }
+  const canopy = document.getElementById('canopy').value;
+  table.querySelector('thead').innerHTML = '<tr><th></th>'+dayData.map(d=>'<th>'+d.label+'</th>').join('')+'</tr>';
+  table.querySelector('tbody').innerHTML = WEEKLY_ROWS.map(row=>{
+    const cells = dayData.map(d=>{
+      if(row.special==='gusttime'){
+        if(d.gustHour==null || d.gustDir==null) return '<td class="na">—</td>';
+        return '<td>'+fmtHour(d.gustHour)+' '+bearingToCompass(d.gustDir)+bearingToArrow(d.gustDir)+'</td>';
+      }
+      const status = row.status ? row.status(d, canopy) : null;
+      return weeklyCellHTML(row.get(d), row.decimals||0, status);
+    }).join('');
+    return '<tr><td>'+row.label+'</td>'+cells+'</tr>';
+  }).join('');
 }
 
 function fmtCell(v, decimals, dirMap, hour){
